@@ -25,7 +25,7 @@
             android:layout_toRightOf="@id/title_city_manager"
             android:background="#A248" />
 
-        <ImageView
+        <TextView
             android:id="@+id/title_city_name"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"

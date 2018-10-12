@@ -1,11 +1,11 @@
-package cn.edu.pku.qixiangyang.util;
+package edu.pku.qixiangyang.util;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 /**
- * Created by 12541 on 2018/10/5.
+ * Created by 12541 on 2018/10/9.
  */
 
 public class NetUtil {
@@ -19,15 +19,12 @@ public class NetUtil {
         if (networkInfo == null) {
             return NETWORN_NONE;
         }
-
         int nType = networkInfo.getType();
         if (nType == ConnectivityManager.TYPE_MOBILE) {
             return NETWORN_MOBILE;
-        }
-        else if (nType == ConnectivityManager.TYPE_WIFI) {
+        } else if (nType == ConnectivityManager.TYPE_WIFI) {
             return NETWORN_WIFI;
         }
         return NETWORN_NONE;
-
     }
 }
