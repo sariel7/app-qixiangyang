@@ -30,6 +30,7 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:gravity="center_vertical"
+            android:layout_toRightOf="@id/city_seperator"
             android:paddingLeft="5dip"
             android:text="北京天气"
             android:textColor="#ffffffff"

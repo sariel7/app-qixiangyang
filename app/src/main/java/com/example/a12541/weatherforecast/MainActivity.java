@@ -1,5 +1,6 @@
 package com.example.a12541.weatherforecast;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Message;
@@ -35,11 +36,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final int UPDATE_TODAY_WEATHER = 1;
 
     private ImageView mUpdateBtn;
+
+    private ImageView mCitySelect;
+
     private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQualityTv,
             temperatureTv, climateTv, windTv, city_name_Tv;
     private ImageView weatherImg, pmImg;
 
     private Handler mHandler = new Handler() {
+        //这是主线程
+        //handler是Android给我们提供用来更新UI的一套机制，也是一套消息处理机制
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
                 case UPDATE_TODAY_WEATHER:
@@ -53,19 +59,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //在onCreate里面，需要先用super.onCreate()来初始化，
+        // 你可能会用setContentView(int)来定义一个布局，或者用findViewById()来操纵一个控件
         super.onCreate(savedInstanceState);
+        //调用父类的onCreate构造函数
+        //savedInstanceState参数是保存当前Activity的状态信息
         setContentView(R.layout.weather_info);
+        //Bundle类型的数据与Map类型的数据相似，以key-value的形式存储数据
+        //saveInsanceState参数是指保存实例状态即保存Activity(活动)的状态
 
         mUpdateBtn = (ImageView) findViewById(R.id.title_update_btn);
+        //找到相关控件ById，然后赋给某个变量，便于操纵
         mUpdateBtn.setOnClickListener(this);
+        //与之匹配的是onClick()
 
         if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
             Log.d("myWeather", "网络OK(这是log.d函数打印的)");
+            //“1”一般为TAG，也就是标识符，用于log非常多的时候进行筛选；“2”为你输出的内容，比如你想要打印字符串str的值
             Toast.makeText(MainActivity.this, "网络OK！", Toast.LENGTH_LONG).show();
+            //show函数是为了将Toast展示出来
+            //第二个参数是Toast显示的内容；第三个参数是Toast显示的时长
         } else {
             Log.d("myWeather", "网络挂了(这是log.d函数打印的)");
             Toast.makeText(MainActivity.this, "网络挂了！", Toast.LENGTH_LONG).show();
         }
+
+        mCitySelect = (ImageView) findViewById(R.id.title_city_manager);
+        mCitySelect.setOnClickListener(this);
+
         initView();
     }
 
@@ -96,6 +117,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
+        if (view.getId() == R.id.title_city_manager) {
+            Intent i = new Intent(this, SelectCity.class);
+            //startActivity(i);
+            startActivityForResult(i, 1);
+        }
         if (view.getId() == R.id.title_update_btn) {
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
             String cityCode = sharedPreferences.getString("main_city_code", "101010100");
@@ -110,6 +136,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1 && resultCode == RESULT_OK) {
+            String newCityCode = data.getStringExtra("cityCode");
+            Log.d("myWeather", "选择的城市代码为" + newCityCode);
+            if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE){
+                Log.d("myWeather", "网络OK");
+                queryWeatherCode(newCityCode);
+            } else{
+                Log.d("myWeather", "网络挂了");
+                Toast.makeText(MainActivity.this, "网络挂了！", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+
     /**
      * @param cityCode
      */
@@ -123,11 +164,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 HttpURLConnection con = null;
                 TodayWeather todayWeather = null;
                 try {
+                    //创建一个URL，获取连接对象，没有建立连接
                     URL url = new URL(address);
+                    //设置连接
                     con = (HttpURLConnection) url.openConnection();
+                    //设置请求方法，必须大写
                     con.setRequestMethod("GET");
+                    //设置内容的时间超时
                     con.setConnectTimeout(8000);
+                    //读取时间超时
                     con.setReadTimeout(8000);
+                    //拿到服务器返回的输入流
                     InputStream in = con.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     StringBuilder response = new StringBuilder();
@@ -156,6 +203,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }).start();
+        //run函数称为线程体，来把thread run起来
+        //start方法用来启动一个线程
     }
 
     private TodayWeather parseXML(String xmldata) {
@@ -173,9 +222,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int eventType = xmlPullParser.getEventType();
             Log.d("myWeather", "parseXML");
             while (eventType != XmlPullParser.END_DOCUMENT) {
-                switch (eventType) {                    // 判断当前事件是否为文档开始事件
+                switch (eventType) {
+                    // 判断当前事件是否为文档开始事件
                     case XmlPullParser.START_DOCUMENT:
-                        break;                    // 判断当前事件是否为标签元素开始事件
+                        break;
+                    // 判断当前事件是否为标签元素开始事件
                     case XmlPullParser.START_TAG:
                         if (xmlPullParser.getName().equals("resp")) {
                             todayWeather = new TodayWeather();
@@ -229,7 +280,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // 判断当前事件是否为标签元素结束事件
                     case XmlPullParser.END_TAG:
                         break;
-                }                // 进入下一个元素并触发相应事件
+                }
+                // 进入下一个元素并触发相应事件
                 eventType = xmlPullParser.next();
             }
         } catch (XmlPullParserException e) {
